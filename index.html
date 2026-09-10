@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Quiz</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #1F2B45;
+      --ink-soft: #56627A;
+      --paper: #FFFFFF;
+      --desk: #E8EEF6;
+      --rule: #C9D6E8;
+      --pencil: #F5C518;
+      --pencil-soft: #FFF4C7;
+      --pencil-edge: #C99700;
+      --alert: #B3261E;
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      margin: 0;
+      background: var(--desk);
+      color: var(--ink);
+      font-family: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-size: 20px;
+      line-height: 1.45;
+    }
+
+    main { max-width: 720px; margin: 0 auto; padding: 32px 16px 48px; }
+
+    .screen { background: var(--paper); border-radius: 16px; padding: 32px 28px; }
+
+    h1, h2 { margin: 0 0 12px; line-height: 1.2; }
+    h1 { font-size: 1.8rem; }
+    h2 { font-size: 1.5rem; }
+    p { margin: 0 0 12px; }
+
+    .meta { color: var(--ink-soft); font-size: 1rem; }
+
+    .field-label { display: block; font-weight: 700; margin: 28px 0 8px; }
+
+    input[type="text"], textarea {
+      width: 100%;
+      font: inherit;
+      color: inherit;
+      background: #fff;
+      padding: 14px 16px;
+      border: 2px solid var(--rule);
+      border-radius: 10px;
+    }
+    input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: var(--ink);
+      box-shadow: 0 0 0 4px var(--pencil-soft);
+    }
+    textarea { min-height: 200px; resize: vertical; }
+
+    .code-input { font-size: 1.6rem; letter-spacing: 0.15em; text-transform: uppercase; max-width: 320px; }
+
+    .btn {
+      font: inherit;
+      font-weight: 700;
+      min-height: 56px;
+      padding: 12px 24px;
+      border-radius: 12px;
+      border: 2px solid var(--ink);
+      cursor: pointer;
+    }
+    .btn-primary { background: var(--ink); color: #fff; }
+    .btn-secondary { background: #fff; color: var(--ink); border-color: var(--rule); }
+    .btn-block { width: 100%; margin-top: 20px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn:focus-visible, .choice:focus-visible, .jump:focus-visible, .chip:focus-visible,
+    .zone:focus-visible, .arrow:focus-visible {
+      outline: 3px solid var(--ink);
+      outline-offset: 3px;
+    }
+
+    .error { color: var(--alert); font-size: 1rem; margin: 12px 0 0; }
+
+    .confirm-name { font-size: 2rem; font-weight: 700; margin: 8px 0 4px; }
+
+    /* Quiz header */
+    .quiz-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 1rem; color: var(--ink-soft); }
+    .quiz-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .quiz-counter { flex: none; font-weight: 700; color: var(--ink); }
+
+    .track { display: flex; gap: 4px; margin: 12px 0 32px; }
+    .seg { flex: 1; height: 10px; border-radius: 5px; background: var(--desk); }
+    .seg.done { background: var(--pencil); }
+    .seg.current { box-shadow: inset 0 0 0 2px var(--ink); }
+
+    .question { font-size: clamp(1.35rem, 4.5vw, 1.7rem); font-weight: 700; line-height: 1.35; margin: 0 0 12px; }
+    .hint { font-size: 1rem; color: var(--ink-soft); margin: 0 0 20px; }
+    .zone-label { font-size: 1rem; font-weight: 700; margin: 24px 0 8px; }
+
+    /* Multiple choice */
+    .choices { display: grid; gap: 12px; margin-top: 8px; }
+    .choice {
+      display: flex; align-items: center; gap: 16px;
+      width: 100%; min-height: 64px; padding: 12px 16px;
+      font: inherit; color: inherit; text-align: left;
+      background: #fff; border: 2px solid var(--rule); border-radius: 12px; cursor: pointer;
+    }
+    .choice:hover { border-color: var(--ink-soft); }
+    .choice[aria-checked="true"] { background: var(--pencil-soft); border-color: var(--pencil-edge); }
+    .letter {
+      flex: none; width: 40px; height: 40px; border-radius: 50%;
+      display: grid; place-items: center; font-weight: 700; border: 2px solid var(--rule);
+    }
+    .choice[aria-checked="true"] .letter { background: var(--pencil); border-color: var(--pencil); }
+
+    /* Number */
+    .number-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+    .number-row input { max-width: 240px; font-size: 1.5rem; }
+    .unit { font-size: 1.3rem; font-weight: 700; }
+
+    /* Draggable pieces */
+    .chip {
+      font: inherit; font-size: 1.05rem; font-weight: 700; line-height: 1.25;
+      color: var(--ink); background: #fff;
+      border: 2px solid var(--ink); border-radius: 10px;
+      padding: 8px 14px; min-height: 48px; text-align: left;
+      cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
+    }
+    .chip.selected { background: var(--pencil); box-shadow: 0 0 0 4px var(--pencil-soft); }
+    .chip.lifted { opacity: 0.3; }
+    .ghost {
+      position: fixed; left: 0; top: 0; z-index: 1000; margin: 0;
+      pointer-events: none; background: var(--pencil);
+      box-shadow: 0 12px 28px rgba(31, 43, 69, 0.28);
+    }
+    body.is-dragging { cursor: grabbing; }
+
+    .zone { cursor: pointer; }
+    .zone.over { background: var(--pencil-soft) !important; }
+    .has-selection .zone:not(.bank) { outline: 2px dashed var(--ink-soft); outline-offset: 2px; }
+    .has-selection .order-row { outline: none !important; }
+
+    .bank {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start;
+      min-height: 80px; padding: 14px;
+      background: var(--desk); border: 2px dashed var(--rule); border-radius: 12px;
+    }
+    .bank:empty::before, .slot:empty::before, .group-items:empty::before {
+      content: attr(data-placeholder);
+      color: var(--ink-soft); font-size: 1rem; padding: 0 6px;
+    }
+
+    /* Word bank */
+    .sentence { font-size: 1.25rem; line-height: 2.8; margin: 0; }
+    .blank {
+      display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;
+      min-width: 120px; min-height: 54px; margin: 2px 4px; padding: 2px;
+      background: var(--desk); border-bottom: 3px solid var(--ink); border-radius: 8px 8px 0 0;
+      line-height: 1.2;
+    }
+    .blank.filled { background: transparent; }
+
+    /* Groups */
+    .groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-top: 16px; }
+    .group { background: #fff; border: 2px solid var(--rule); border-radius: 12px; padding: 12px; min-height: 150px; }
+    .group-name { font-weight: 700; margin: 0 0 10px; }
+    .group-items { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    /* Matching */
+    .match-list { display: grid; gap: 14px; }
+    .match-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 12px; align-items: center; }
+    .term { font-weight: 700; margin: 0; }
+    .slot {
+      display: flex; align-items: center; min-height: 58px; padding: 4px;
+      background: var(--desk); border: 2px solid var(--rule); border-radius: 12px;
+    }
+    .slot .chip { width: 100%; }
+
+    /* Label a diagram */
+    .diagram { position: relative; max-width: 560px; margin: 0 auto 20px; }
+    .diagram img { display: block; width: 100%; height: auto; background: #fff; border: 2px solid var(--rule); border-radius: 12px; }
+    .marker {
+      position: absolute; width: 36px; height: 36px; transform: translate(-50%, -50%);
+      display: grid; place-items: center; border-radius: 50%;
+      background: var(--ink); color: #fff; font-size: 1rem; font-weight: 700;
+      border: 3px solid #fff; box-shadow: 0 0 0 2px var(--ink);
+    }
+    .marker.filled, .num.filled { background: var(--pencil); color: var(--ink); }
+    .label-list { display: grid; gap: 10px; }
+    .label-row { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: center; }
+    .num {
+      width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%;
+      background: var(--ink); color: #fff; font-size: 1rem; font-weight: 700;
+    }
+    .image-error { color: var(--alert); font-size: 1rem; }
+
+    /* Order */
+    .order-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: step; }
+    .order-row { display: flex; align-items: stretch; gap: 8px; border-radius: 12px; counter-increment: step; }
+    .order-row::before {
+      content: counter(step); flex: none; width: 28px;
+      display: grid; place-items: center; font-weight: 700; color: var(--ink-soft);
+    }
+    .order-chip { flex: 1; display: flex; align-items: center; gap: 12px; border-color: var(--rule); }
+    .grip { color: var(--ink-soft); font-size: 1.2rem; line-height: 1; }
+    .arrow {
+      flex: none; width: 48px; font: inherit; font-size: 1.2rem; font-weight: 700;
+      color: var(--ink); background: #fff; border: 2px solid var(--rule); border-radius: 10px; cursor: pointer;
+    }
+    .arrow:disabled { opacity: 0.3; cursor: default; }
+
+    /* Navigation */
+    .nav {
+      position: sticky; bottom: 0; z-index: 5;
+      display: flex; gap: 12px;
+      margin: 32px -28px -32px; padding: 16px 28px;
+      background: #fff; border-top: 2px solid var(--desk); border-radius: 0 0 16px 16px;
+    }
+    .nav .btn { flex: 1; }
+
+    /* Review */
+    .jump-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 20px; }
+    .jump {
+      font: inherit; font-size: 1rem; font-weight: 700; min-height: 48px; padding: 8px 16px;
+      color: var(--ink); background: var(--pencil-soft); border: 2px solid var(--pencil-edge); border-radius: 10px; cursor: pointer;
+    }
+
+    .mark {
+      width: 64px; height: 64px; border-radius: 50%; margin-bottom: 20px;
+      display: grid; place-items: center; background: var(--pencil); color: var(--ink);
+    }
+
+    @media (max-width: 520px) {
+      body { font-size: 18px; }
+      main { padding: 0; }
+      .screen { border-radius: 0; min-height: 100vh; padding: 24px 18px; }
+      .nav { margin: 28px -18px -24px; padding: 12px 18px; border-radius: 0; }
+      .match-row { grid-template-columns: 1fr; gap: 6px; }
+      .sentence { font-size: 1.15rem; }
+      .blank { min-width: 96px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { scroll-behavior: auto !important; }
+    }
+  </style>
+  <script src="config.js"></script>
+</head>
+<body>
+  <main>
+
+    <section id="screen-loading" class="screen" aria-live="polite">
+      <p>Loading quiz…</p>
+    </section>
+
+    <section id="screen-message" class="screen" hidden aria-live="polite">
+      <div id="message-mark" class="mark" hidden>
+        <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true">
+          <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h1 id="message-title"></h1>
+      <p id="message-text"></p>
+    </section>
+
+    <section id="screen-start" class="screen" hidden>
+      <h1 id="start-title"></h1>
+      <p id="start-instructions"></p>
+      <p id="start-meta" class="meta"></p>
+
+      <label class="field-label" for="code-input">Your student code</label>
+      <input id="code-input" class="code-input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20">
+      <p id="start-error" class="error" role="alert" hidden></p>
+
+      <button id="code-button" class="btn btn-primary btn-block" type="button">Continue</button>
+    </section>
+
+    <section id="screen-confirm" class="screen" hidden>
+      <h2>Is this you?</h2>
+      <p id="confirm-name" class="confirm-name"></p>
+      <p id="confirm-class" class="meta"></p>
+      <p class="meta">If this isn't your name, go back and check your code.</p>
+      <div class="nav">
+        <button id="not-me-button" class="btn btn-secondary" type="button">Not me</button>
+        <button id="begin-button" class="btn btn-primary" type="button">Start quiz</button>
+      </div>
+    </section>
+
+    <section id="screen-quiz" class="screen" hidden>
+      <div class="quiz-top">
+        <span id="quiz-title" class="quiz-title"></span>
+        <span id="quiz-counter" class="quiz-counter" aria-live="polite"></span>
+      </div>
+      <div id="track" class="track" aria-hidden="true"></div>
+
+      <p id="question-text" class="question"></p>
+      <div id="answer-area"></div>
+
+      <div class="nav">
+        <button id="back-button" class="btn btn-secondary" type="button">Back</button>
+        <button id="next-button" class="btn btn-primary" type="button">Next</button>
+      </div>
+    </section>
+
+    <section id="screen-review" class="screen" hidden>
+      <h2>Review your answers</h2>
+      <p id="review-summary"></p>
+
+      <p id="review-missing-label" class="meta" hidden>Still blank or unfinished. Tap one to finish it:</p>
+      <div id="review-missing" class="jump-list"></div>
+
+      <p class="meta">You can only submit once. After you submit, you can't change your answers.</p>
+      <p id="review-error" class="error" role="alert" hidden></p>
+
+      <div class="nav">
+        <button id="review-back-button" class="btn btn-secondary" type="button">Back to questions</button>
+        <button id="submit-button" class="btn btn-primary" type="button">Submit quiz</button>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    /* ---------- Setup ---------- */
+
+    const API_URL = String(window.QUIZ_SERVER || "").trim();
+    const QUIZ_ID = (new URLSearchParams(location.search).get("quiz") || "").trim();
+
+    const state = {
+      code: "",
+      title: "",
+      questions: [],
+      answers: {},
+      index: 0,
+      selected: null,
+      inProgress: false
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const answerArea = $("answer-area");
+
+    function el(tag, props, ...kids) {
+      const node = document.createElement(tag);
+      for (const key in props || {}) {
+        const v = props[key];
+        if (v == null || v === false) continue;
+        if (key === "class") node.className = v;
+        else if (key === "text") node.textContent = v;
+        else if (key.startsWith("on")) node.addEventListener(key.slice(2), v);
+        else node.setAttribute(key, v === true ? "" : v);
+      }
+      kids.flat(Infinity).forEach((kid) => {
+        if (kid == null || kid === false) return;
+        node.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+      });
+      return node;
+    }
+
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    async function api(action, data) {
+      const body = JSON.stringify(Object.assign({ action: action, quiz: QUIZ_ID }, data || {}));
+      let lastError;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt > 0) await sleep(attempt * 1500);
+        let res;
+        try {
+          res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: body
+          });
+        } catch (err) {
+          lastError = new Error("Couldn't reach the quiz. Check your internet connection and try again.");
+          continue;
+        }
+        let payload;
+        try {
+          payload = await res.json();
+        } catch (err) {
+          lastError = new Error("The quiz is busy. Wait a moment and try again.");
+          continue;
+        }
+        if (payload.error) throw new Error(payload.error);
+        return payload;
+      }
+      throw lastError;
+    }
+
+    function show(screenId) {
+      document.querySelectorAll(".screen").forEach((s) => { s.hidden = s.id !== screenId; });
+      window.scrollTo(0, 0);
+    }
+
+    function showMessage(title, text, success) {
+      $("message-title").textContent = title;
+      $("message-text").textContent = text;
+      $("message-mark").hidden = !success;
+      show("screen-message");
+    }
+
+    function setError(id, message) {
+      $(id).textContent = message || "";
+      $(id).hidden = !message;
+    }
+
+    function setBusy(button, busy, busyLabel) {
+      if (busy) {
+        button.dataset.label = button.textContent;
+        button.textContent = busyLabel;
+      } else if (button.dataset.label) {
+        button.textContent = button.dataset.label;
+      }
+      button.disabled = busy;
+    }
+
+    /* ---------- Load ---------- */
+
+    async function init() {
+      if (!/^https:\/\/script\.google\.com\/.+\/exec$/.test(API_URL)) {
+        showMessage("This quiz isn't connected yet", "Teacher: paste your Apps Script web app URL into config.js. It ends in /exec.");
+        return;
+      }
+      if (!QUIZ_ID) {
+        showMessage("This quiz link isn't complete", "The link is missing the quiz name. Ask your teacher for the full link.");
+        return;
+      }
+      try {
+        const info = await api("info");
+        state.title = info.title;
+        document.title = info.title;
+        if (!info.open) {
+          showMessage("This quiz is closed", "Ask your teacher when it opens.");
+          return;
+        }
+        $("start-title").textContent = info.title;
+        $("start-instructions").textContent = info.instructions;
+        $("start-instructions").hidden = !info.instructions;
+        $("start-meta").textContent = info.questionCount + (info.questionCount === 1 ? " question." : " questions.");
+        show("screen-start");
+      } catch (err) {
+        showMessage("This quiz can't open right now", err.message);
+      }
+    }
+
+    /* ---------- Student code ---------- */
+
+    async function checkCode() {
+      const code = $("code-input").value.replace(/[^a-z0-9]/gi, "").toUpperCase();
+      if (!code) {
+        setError("start-error", "Enter your student code.");
+        $("code-input").focus();
+        return;
+      }
+      setError("start-error", "");
+      const button = $("code-button");
+      setBusy(button, true, "Checking…");
+
+      try {
+        const result = await api("start", { code: code });
+        if (result.status === "already-submitted") {
+          showMessage("Quiz already submitted", "Your answers were already received. Ask your teacher if you need to retake it.", true);
+          return;
+        }
+        state.code = code;
+        state.questions = result.questions;
+        state.answers = {};
+        state.index = 0;
+        state.selected = null;
+        $("confirm-name").textContent = result.name;
+        $("confirm-class").textContent = result.className || "";
+        $("confirm-class").hidden = !result.className;
+        show("screen-confirm");
+      } catch (err) {
+        setError("start-error", err.message);
+      } finally {
+        setBusy(button, false);
+      }
+    }
+
+    $("code-button").addEventListener("click", checkCode);
+    $("code-input").addEventListener("keydown", (e) => { if (e.key === "Enter") checkCode(); });
+    $("code-input").addEventListener("input", () => setError("start-error", ""));
+
+    $("not-me-button").addEventListener("click", () => {
+      state.code = "";
+      state.questions = [];
+      $("code-input").value = "";
+      show("screen-start");
+      $("code-input").focus();
+    });
+
+    $("begin-button").addEventListener("click", () => {
+      state.inProgress = true;
+      $("quiz-title").textContent = state.title;
+      buildTrack();
+      renderQuestion();
+      show("screen-quiz");
+    });
+
+    /* ---------- Answer state ---------- */
+
+    const currentQ = () => state.questions[state.index];
+    const range = (n) => Array.from({ length: n }, (_, i) => i);
+    const blankCount = (q) => q.segments.filter((s) => s === null).length;
+
+    function pieces(q) {
+      return { wordbank: q.bank, groups: q.items, match: q.definitions, label: q.labels }[q.type];
+    }
+
+    function slotState(q) {
+      if (!state.answers[q.id]) state.answers[q.id] = { place: {} };
+      return state.answers[q.id];
+    }
+
+    function chipsIn(q, zone) {
+      const place = slotState(q).place;
+      return Object.keys(place).filter((c) => place[c] === zone);
+    }
+
+    function orderState(q) {
+      if (!state.answers[q.id]) state.answers[q.id] = { order: range(q.steps.length), touched: false };
+      return state.answers[q.id];
+    }
+
+    function drop(q, chipId, zone) {
+      chipId = String(chipId);
+      if (q.type === "order") {
+        if (zone.charAt(0) !== "p") return;
+        const st = orderState(q);
+        const from = st.order.indexOf(Number(chipId));
+        if (from === -1) return;
+        st.order.splice(from, 1);
+        st.order.splice(Number(zone.slice(1)), 0, Number(chipId));
+        st.touched = true;
+        return;
+      }
+
+      const st = slotState(q);
+      const from = st.place[chipId] || "bank";
+      if (from === zone) return;
+
+      if (zone.charAt(0) === "s") {
+        const occupant = chipsIn(q, zone)[0];
+        if (occupant !== undefined) {
+          if (from === "bank") delete st.place[occupant];
+          else st.place[occupant] = from;
+        }
+      }
+      if (zone === "bank") delete st.place[chipId];
+      else st.place[chipId] = zone;
+    }
+
+    function isAnswered(q) {
+      const a = state.answers[q.id];
+      switch (q.type) {
+        case "choice": return !!a;
+        case "short":
+        case "number": return String(a || "").trim() !== "";
+        case "wordbank": return range(blankCount(q)).every((i) => chipsIn(q, "s" + i).length > 0);
+        case "match": return q.terms.every((_, i) => chipsIn(q, "s" + i).length > 0);
+        case "label": return q.targets.every((_, i) => chipsIn(q, "s" + i).length > 0);
+        case "groups": return q.items.every((_, i) => !!slotState(q).place[i]);
+        case "order": return !!(a && a.touched);
+      }
+      return false;
+    }
+
+    function answerFor(q) {
+      const a = state.answers[q.id];
+      const pieceIn = (zone, list) => {
+        const c = chipsIn(q, zone)[0];
+        return c === undefined ? null : list[Number(c)];
+      };
+      switch (q.type) {
+        case "choice":
+        case "short":
+        case "number":
+          return a == null ? "" : String(a).trim();
+        case "wordbank":
+          return range(blankCount(q)).map((i) => pieceIn("s" + i, q.bank));
+        case "label":
+          return q.targets.map((_, i) => pieceIn("s" + i, q.labels));
+        case "match": {
+          const out = {};
+          q.terms.forEach((term, i) => {
+            const d = pieceIn("s" + i, q.definitions);
+            if (d !== null) out[term] = d;
+          });
+          return out;
+        }
+        case "groups": {
+          const out = {};
+          const place = slotState(q).place;
+          q.items.forEach((item, i) => {
+            if (place[i]) out[item] = q.groups[Number(place[i].slice(1))];
+          });
+          return out;
+        }
+        case "order":
+          return a && a.touched ? a.order.map((i) => q.steps[i]) : [];
+      }
+      return null;
+    }
+
+    /* ---------- Rendering ---------- */
+
+    function buildTrack() {
+      $("track").replaceChildren(...state.questions.map(() => el("span", { class: "seg" })));
+    }
+
+    function updateTrack() {
+      const segs = $("track").children;
+      state.questions.forEach((q, i) => {
+        segs[i].classList.toggle("done", isAnswered(q));
+        segs[i].classList.toggle("current", i === state.index);
+      });
+    }
+
+    function renderQuestion() {
+      const q = currentQ();
+      const total = state.questions.length;
+      $("quiz-counter").textContent = "Question " + (state.index + 1) + " of " + total;
+      $("question-text").textContent = q.text;
+      $("back-button").disabled = state.index === 0;
+      $("next-button").textContent = state.index === total - 1 ? "Review answers" : "Next";
+      renderAnswer();
+    }
+
+    function renderAnswer(focusChip) {
+      const q = currentQ();
+      answerArea.replaceChildren(...[RENDER[q.type](q)].flat(Infinity));
+      answerArea.classList.toggle("has-selection", state.selected !== null);
+      updateTrack();
+      if (focusChip != null) {
+        const target = answerArea.querySelector('[data-chip="' + focusChip + '"]');
+        if (target) target.focus();
+      }
+    }
+
+    function hint(text) {
+      return el("p", { class: "hint", text: text });
+    }
+
+    function chip(id, label, extraClass, ...kids) {
+      const selected = state.selected === String(id);
+      return el("button", {
+        type: "button",
+        class: "chip" + (extraClass ? " " + extraClass : "") + (selected ? " selected" : ""),
+        "data-chip": id,
+        "aria-pressed": selected ? "true" : "false"
+      }, kids.length ? kids : label);
+    }
+
+    function zone(id, cls, ariaLabel, placeholder, ...kids) {
+      return el("div", {
+        class: "zone " + cls,
+        "data-zone": id,
+        role: "button",
+        tabindex: "0",
+        "aria-label": ariaLabel,
+        "data-placeholder": placeholder
+      }, kids);
+    }
+
+    function bankZone(q, label) {
+      const list = pieces(q);
+      const inBank = list.map((_, i) => String(i)).filter((i) => !slotState(q).place[i]);
+      return [
+        el("p", { class: "zone-label", text: label }),
+        zone("bank", "bank", label, "Every piece is placed.", inBank.map((i) => chip(i, list[i])))
+      ];
+    }
+
+    const RENDER = {
+      choice(q) {
+        const group = el("div", { class: "choices", role: "radiogroup", "aria-labelledby": "question-text" });
+        q.choices.forEach((choice, i) => {
+          const btn = el("button", {
+            type: "button",
+            class: "choice",
+            role: "radio",
+            "aria-checked": state.answers[q.id] === choice ? "true" : "false"
+          },
+            el("span", { class: "letter", text: String.fromCharCode(65 + i) }),
+            el("span", { text: choice })
+          );
+          btn.addEventListener("click", () => {
+            state.answers[q.id] = choice;
+            group.querySelectorAll(".choice").forEach((b) => b.setAttribute("aria-checked", b === btn ? "true" : "false"));
+            updateTrack();
+          });
+          group.append(btn);
+        });
+        return group;
+      },
+
+      short(q) {
+        const box = el("textarea", { maxlength: "5000", "aria-labelledby": "question-text" });
+        box.value = state.answers[q.id] || "";
+        box.addEventListener("input", () => { state.answers[q.id] = box.value; updateTrack(); });
+        return [hint("Type your answer below."), box];
+      },
+
+      number(q) {
+        const input = el("input", { type: "text", inputmode: "decimal", autocomplete: "off", "aria-labelledby": "question-text" });
+        input.value = state.answers[q.id] || "";
+        input.addEventListener("input", () => {
+          input.value = input.value.replace(/[^0-9.,\-]/g, "");
+          state.answers[q.id] = input.value;
+          updateTrack();
+        });
+        return [
+          hint("Type a number."),
+          el("div", { class: "number-row" }, input, q.unit ? el("span", { class: "unit", text: q.unit }) : null)
+        ];
+      },
+
+      wordbank(q) {
+        let k = 0;
+        const sentence = el("p", { class: "sentence" }, q.segments.map((seg) => {
+          if (seg !== null) return seg;
+          const slot = "s" + k;
+          k++;
+          const inside = chipsIn(q, slot).map((c) => chip(c, q.bank[c]));
+          return zone(slot, "blank" + (inside.length ? " filled" : ""), "Blank " + k, "", inside);
+        }));
+        return [
+          hint("Drag each word into a blank. Or tap a word, then tap a blank."),
+          sentence,
+          bankZone(q, "Word bank")
+        ];
+      },
+
+      groups(q) {
+        const grid = el("div", { class: "groups" }, q.groups.map((name, i) => {
+          const z = "c" + i;
+          return zone(z, "group", "Group: " + name, "",
+            el("p", { class: "group-name", text: name }),
+            el("div", { class: "group-items", "data-placeholder": "Drop items here" },
+              chipsIn(q, z).map((c) => chip(c, q.items[c])))
+          );
+        }));
+        return [
+          hint("Drag each item into a group. Or tap an item, then tap a group."),
+          bankZone(q, "Items to sort"),
+          grid
+        ];
+      },
+
+      match(q) {
+        const rows = q.terms.map((term, i) => el("div", { class: "match-row" },
+          el("p", { class: "term", text: term }),
+          zone("s" + i, "slot", "Definition for " + term, "Drop a definition here",
+            chipsIn(q, "s" + i).map((c) => chip(c, q.definitions[c])))
+        ));
+        return [
+          hint("Drag each definition next to its term. Or tap a definition, then tap a spot."),
+          el("div", { class: "match-list" }, rows),
+          bankZone(q, "Definitions")
+        ];
+      },
+
+      order(q) {
+        const st = orderState(q);
+        const last = st.order.length - 1;
+        const list = el("ol", { class: "order-list" }, st.order.map((stepIndex, pos) =>
+          el("li", { class: "zone order-row", "data-zone": "p" + pos },
+            chip(stepIndex, null, "order-chip",
+              el("span", { class: "grip", "aria-hidden": "true", text: "⠿" }),
+              el("span", { text: q.steps[stepIndex] })
+            ),
+            el("button", { type: "button", class: "arrow", "data-move": "up", "data-pos": pos, "aria-label": "Move up", disabled: pos === 0, text: "↑" }),
+            el("button", { type: "button", class: "arrow", "data-move": "down", "data-pos": pos, "aria-label": "Move down", disabled: pos === last, text: "↓" })
+          )
+        ));
+        return [hint("Drag the steps into the right order, or use the arrows."), list];
+      },
+
+      label(q) {
+        const img = el("img", { src: q.image, alt: q.alt || "Diagram" });
+        const diagram = el("div", { class: "diagram" }, img, q.targets.map((t, i) => {
+          const filled = chipsIn(q, "s" + i).length > 0;
+          const marker = zone("s" + i, "marker" + (filled ? " filled" : ""), "Spot " + (i + 1), "", String(i + 1));
+          marker.style.left = t.x + "%";
+          marker.style.top = t.y + "%";
+          return marker;
+        }));
+        img.addEventListener("error", () => {
+          diagram.replaceWith(el("p", { class: "image-error", text: "This image didn't load. Tell your teacher." }));
+        });
+
+        const list = el("div", { class: "label-list" }, q.targets.map((_, i) => {
+          const inside = chipsIn(q, "s" + i);
+          return el("div", { class: "label-row" },
+            el("span", { class: "num" + (inside.length ? " filled" : ""), "aria-hidden": "true", text: String(i + 1) }),
+            zone("s" + i, "slot", "Label for spot " + (i + 1), "Drop a label here", inside.map((c) => chip(c, q.labels[c])))
+          );
+        }));
+
+        return [
+          hint("Drag each label to a numbered spot. Or tap a label, then tap a spot."),
+          diagram,
+          list,
+          bankZone(q, "Labels")
+        ];
+      }
+    };
+
+    /* ---------- Tap to place ---------- */
+
+    let lastDragEnd = 0;
+
+    function zoneOfChip(chipEl) {
+      const z = chipEl.closest("[data-zone]");
+      return z ? z.dataset.zone : "bank";
+    }
+
+    answerArea.addEventListener("click", (e) => {
+      if (Date.now() - lastDragEnd < 400) return;
+      const q = currentQ();
+      const keyboard = e.detail === 0;
+
+      const mover = e.target.closest("[data-move]");
+      if (mover) {
+        const pos = Number(mover.dataset.pos);
+        const st = orderState(q);
+        const id = st.order[pos];
+        const to = mover.dataset.move === "up" ? pos - 1 : pos + 1;
+        if (to < 0 || to >= st.order.length) return;
+        drop(q, id, "p" + to);
+        state.selected = null;
+        renderAnswer();
+        const again = answerArea.querySelector('[data-move="' + mover.dataset.move + '"][data-pos="' + to + '"]');
+        if (again && !again.disabled) again.focus();
+        else { const c = answerArea.querySelector('[data-chip="' + id + '"]'); if (c) c.focus(); }
+        return;
+      }
+
+      const chipEl = e.target.closest("[data-chip]");
+      if (chipEl) {
+        const id = chipEl.dataset.chip;
+        const where = zoneOfChip(chipEl);
+        let focus = id;
+        if (state.selected === id) {
+          state.selected = null;
+        } else if (state.selected !== null && where !== "bank") {
+          focus = state.selected;
+          drop(q, state.selected, where);
+          state.selected = null;
+        } else {
+          state.selected = id;
+        }
+        renderAnswer(keyboard ? focus : null);
+        return;
+      }
+
+      const zoneEl = e.target.closest("[data-zone]");
+      if (zoneEl && state.selected !== null) {
+        const moved = state.selected;
+        drop(q, moved, zoneEl.dataset.zone);
+        state.selected = null;
+        renderAnswer(keyboard ? moved : null);
+      }
+    });
+
+    answerArea.addEventListener("keydown", (e) => {
+      const z = e.target;
+      if (z.matches && z.matches("[data-zone][role='button']") && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        z.click();
+      }
+      if (e.key === "Escape" && state.selected !== null) {
+        state.selected = null;
+        renderAnswer();
+      }
+    });
+
+    /* ---------- Drag and drop (mouse, touch, and pen) ---------- */
+
+    let drag = null;
+
+    answerArea.addEventListener("pointerdown", (e) => {
+      const chipEl = e.target.closest("[data-chip]");
+      if (!chipEl || (e.pointerType === "mouse" && e.button !== 0)) return;
+      drag = { id: chipEl.dataset.chip, el: chipEl, x: e.clientX, y: e.clientY, active: false, ghost: null, over: null };
+    });
+
+    window.addEventListener("pointermove", (e) => {
+      if (!drag) return;
+      if (!drag.active) {
+        if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 8) return;
+        const rect = drag.el.getBoundingClientRect();
+        drag.active = true;
+        drag.offX = drag.x - rect.left;
+        drag.offY = drag.y - rect.top;
+        drag.ghost = drag.el.cloneNode(true);
+        drag.ghost.classList.add("ghost");
+        drag.ghost.classList.remove("lifted");
+        drag.ghost.style.width = rect.width + "px";
+        document.body.append(drag.ghost);
+        drag.el.classList.add("lifted");
+        document.body.classList.add("is-dragging");
+      }
+      e.preventDefault();
+      drag.ghost.style.transform = "translate(" + (e.clientX - drag.offX) + "px, " + (e.clientY - drag.offY) + "px)";
+
+      const under = document.elementFromPoint(e.clientX, e.clientY);
+      const z = under ? under.closest("#answer-area [data-zone]") : null;
+      if (drag.over && drag.over !== z) drag.over.classList.remove("over");
+      if (z) z.classList.add("over");
+      drag.over = z;
+
+      if (e.clientY < 70) window.scrollBy(0, -14);
+      else if (e.clientY > window.innerHeight - 110) window.scrollBy(0, 14);
+    }, { passive: false });
+
+    function endDrag(cancelled) {
+      if (!drag) return;
+      const d = drag;
+      drag = null;
+      if (!d.active) return;
+
+      d.ghost.remove();
+      d.el.classList.remove("lifted");
+      document.body.classList.remove("is-dragging");
+      if (d.over) d.over.classList.remove("over");
+      lastDragEnd = Date.now();
+
+      if (!cancelled && d.over) {
+        drop(currentQ(), d.id, d.over.dataset.zone);
+        state.selected = null;
+        renderAnswer();
+      }
+    }
+
+    window.addEventListener("pointerup", () => endDrag(false));
+    window.addEventListener("pointercancel", () => endDrag(true));
+
+    /* ---------- Navigation ---------- */
+
+    $("back-button").addEventListener("click", () => {
+      if (state.index > 0) {
+        state.index--;
+        state.selected = null;
+        renderQuestion();
+        window.scrollTo(0, 0);
+      }
+    });
+
+    $("next-button").addEventListener("click", () => {
+      state.selected = null;
+      if (state.index < state.questions.length - 1) {
+        state.index++;
+        renderQuestion();
+        window.scrollTo(0, 0);
+      } else {
+        renderReview();
+        show("screen-review");
+      }
+    });
+
+    function renderReview() {
+      const total = state.questions.length;
+      const unfinished = state.questions.map((q, i) => (isAnswered(q) ? null : i)).filter((i) => i !== null);
+
+      $("review-summary").textContent = "You finished " + (total - unfinished.length) + " of " + total + " questions.";
+      $("review-missing-label").hidden = unfinished.length === 0;
+      $("review-missing").replaceChildren(...unfinished.map((i) =>
+        el("button", {
+          type: "button",
+          class: "jump",
+          text: "Question " + (i + 1),
+          onclick: () => {
+            state.index = i;
+            state.selected = null;
+            renderQuestion();
+            show("screen-quiz");
+          }
+        })
+      ));
+      setError("review-error", "");
+    }
+
+    $("review-back-button").addEventListener("click", () => {
+      state.index = state.questions.length - 1;
+      renderQuestion();
+      show("screen-quiz");
+    });
+
+    $("submit-button").addEventListener("click", async () => {
+      const submitBtn = $("submit-button");
+      const backBtn = $("review-back-button");
+      setBusy(submitBtn, true, "Submitting…");
+      backBtn.disabled = true;
+      setError("review-error", "");
+
+      const answers = {};
+      state.questions.forEach((q) => { answers[q.id] = answerFor(q); });
+
+      try {
+        await api("submit", { code: state.code, answers: answers });
+        state.inProgress = false;
+        showMessage("Quiz submitted", "Your answers were sent to your teacher. You can close this tab.", true);
+      } catch (err) {
+        setBusy(submitBtn, false);
+        backBtn.disabled = false;
+        setError("review-error", err.message + " Your answers are still here.");
+      }
+    });
+
+    window.addEventListener("beforeunload", (e) => {
+      if (state.inProgress) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>
