@@ -1,0 +1,43 @@
+/*
+  THEME
+  Colors, fonts, and shapes for the student site and the quiz editor.
+  Change a value here, upload this file to GitHub, and both update.
+  The editor reads this file from your quiz website address.
+*/
+
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap");
+
+:root {
+  /* Backgrounds */
+  --color-page: #E8EEF6;          /* behind everything */
+  --color-surface: #FFFFFF;       /* cards, inputs, buttons */
+  --color-sunken: #E8EEF6;        /* drop areas, word banks, progress track */
+
+  /* Text and lines */
+  --color-ink: #1F2B45;           /* main text and primary buttons */
+  --color-ink-soft: #56627A;      /* hints and secondary text */
+  --color-on-ink: #FFFFFF;        /* text on primary buttons */
+  --color-line: #C9D6E8;          /* borders */
+
+  /* Accent: selected answers, progress, highlights */
+  --color-accent: #F5C518;
+  --color-accent-soft: #FFF4C7;
+  --color-accent-strong: #C99700; /* focus rings, selected borders */
+
+  /* Status */
+  --color-success: #1E7B4F;
+  --color-success-soft: #E2F3E9;
+  --color-danger: #B3261E;
+  --color-danger-soft: #FDECEA;
+
+  /* Type */
+  --font-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-heading: var(--font-body);
+
+  /* Shape */
+  --radius-card: 16px;
+  --radius-control: 12px;
+  --radius-small: 8px;
+  --border-width: 2px;
+  --shadow-lift: 0 12px 28px rgba(31, 43, 69, 0.28);
+}
