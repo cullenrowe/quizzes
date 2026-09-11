@@ -288,6 +288,15 @@
     }
 
     /* Link-style button */
+    .question-picture { margin: 0 0 18px; }
+    .question-picture img {
+      display: block; max-width: 100%; max-height: 360px; margin: 0 auto;
+      border: var(--border-width) solid var(--color-line); border-radius: var(--radius-control); background: var(--color-surface);
+    }
+    .makeup-tag { display: inline-block; font-size: 0.85rem; font-weight: 700; color: var(--color-primary); margin-right: 4px; }
+    .preview-item.partial { border-color: var(--color-accent-strong); background: var(--color-accent-soft); }
+    .preview-item.partial .preview-mark { background: var(--color-accent); color: var(--color-ink); }
+
     .link-button {
       font: inherit; font-size: 1rem; color: var(--color-ink); background: none; border: none;
       padding: 8px 4px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
@@ -444,6 +453,9 @@
       <div id="track" class="track" aria-hidden="true"></div>
 
       <p id="question-text" class="question"></p>
+      <figure id="question-picture" class="question-picture" hidden>
+        <img id="question-picture-img" alt="">
+      </figure>
       <div id="answer-area"></div>
 
       <div class="nav">
@@ -473,7 +485,7 @@
   <script>
     /* ---------- Setup ---------- */
 
-    const APP_VERSION = "3.1";
+    const APP_VERSION = "3.2";
     const API_URL = String(window.QUIZ_SERVER || "").trim();
     const PARAMS = new URLSearchParams(location.search);
     const LINK_QUIZ = (PARAMS.get("quiz") || "").trim();
@@ -700,7 +712,9 @@
         if (q.closesAt) details.push("Closes " + formatWhen(q.closesAt));
         const info = el("div", {},
           el("p", { class: "hub-title", text: q.title }),
-          el("p", { class: "meta", text: q.done ? "Submitted." : details.join(". ") + "." })
+          el("p", { class: "meta" },
+            q.makeup && !q.done ? el("span", { class: "makeup-tag", text: "Makeup." }) : null,
+            q.done ? "Submitted." : details.join(". ") + ".")
         );
         if (q.done) {
           return el("li", { class: "hub-item done" }, info, el("span", { class: "done-badge" }, "✓ Done"));
@@ -795,14 +809,16 @@
       const hand = result.handMax ? " Short answers are worth " + plural(result.handMax, "point") + " and you grade those." : "";
       $("preview-score").textContent = "Auto-graded score: " + result.auto + " of " + result.autoMax + "." + hand;
       $("preview-list").replaceChildren(...result.results.map((r) => {
-        const status = r.correct === null ? "hand" : r.correct ? "right" : "wrong";
-        const mark = status === "hand" ? "✎" : status === "right" ? "✓" : "✗";
+        const status = r.correct === null ? "hand" : r.correct ? "right" : r.partial ? "partial" : "wrong";
+        const marks = { hand: "✎", right: "✓", partial: "◐", wrong: "✗" };
+        const labels = { hand: "Graded by teacher", right: "Correct", partial: "Partly correct", wrong: "Wrong" };
         return el("li", { class: "preview-item " + status },
-          el("span", { class: "preview-mark", "aria-label": status === "hand" ? "Graded by teacher" : status === "right" ? "Correct" : "Wrong" }, mark),
+          el("span", { class: "preview-mark", "aria-label": labels[status] }, marks[status]),
           el("div", {},
             el("p", { class: "preview-q", text: "Q" + r.number + ". " + r.text }),
             el("p", { class: "preview-line", text: "Answer given: " + (r.given || "(no answer)") }),
-            status === "wrong" ? el("p", { class: "preview-line", text: "Correct answer: " + r.key }) : null
+            status === "partial" ? el("p", { class: "preview-line", text: r.right + " of " + r.parts + " parts right. Earned " + r.earned + " of " + plural(r.points, "point") + "." }) : null,
+            status === "wrong" || status === "partial" ? el("p", { class: "preview-line", text: "Correct answer: " + r.key }) : null
           )
         );
       }));
@@ -997,6 +1013,14 @@
       const total = state.questions.length;
       $("quiz-counter").textContent = "Question " + (state.index + 1) + " of " + total;
       $("question-text").textContent = q.text;
+      const picture = $("question-picture-img");
+      if (q.picture) {
+        picture.src = q.picture;
+        picture.alt = q.pictureAlt || "Picture for this question";
+      } else {
+        picture.removeAttribute("src");
+      }
+      $("question-picture").hidden = !q.picture;
       $("back-button").disabled = state.index === 0;
       $("next-button").textContent = state.index === total - 1 ? "Review answers" : "Next";
       renderAnswer();
