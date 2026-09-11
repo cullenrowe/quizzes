@@ -4,27 +4,38 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
-  <title>Quiz</title>
+  <title>Quizzes</title>
+  <link rel="icon" type="image/png" href="favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <style>
     /* Default theme. theme.css overrides these, so change the look there. */
     :root {
+      /* Names shown to students */
+      --brand-name: "Coach Tiemann’s Quizzes";
+      --brand-school: "Concordia Lutheran School";
+      --brand-welcome: "Welcome, Cardinals";
+
       /* Backgrounds */
-      --color-page: #E8EEF6;          /* behind everything */
+      --color-page: #F7F3EF;          /* warm off-white behind everything */
       --color-surface: #FFFFFF;       /* cards, inputs, buttons */
-      --color-sunken: #E8EEF6;        /* drop areas, word banks, progress track */
+      --color-sunken: #EFE9E4;        /* drop areas, word banks, progress track */
 
       /* Text and lines */
-      --color-ink: #1F2B45;           /* main text and primary buttons */
-      --color-ink-soft: #56627A;      /* hints and secondary text */
-      --color-on-ink: #FFFFFF;        /* text on primary buttons */
-      --color-line: #C9D6E8;          /* borders */
+      --color-ink: #221A1F;           /* cardinal black: main text */
+      --color-ink-soft: #625A5E;      /* hints and secondary text */
+      --color-on-ink: #FFFFFF;        /* text on dark fills */
+      --color-line: #DDD2CC;          /* borders */
 
-      /* Accent: selected answers, progress, highlights */
-      --color-accent: #F5C518;
-      --color-accent-soft: #FFF4C7;
-      --color-accent-strong: #C99700; /* focus rings, selected borders */
+      /* Cardinal red: main buttons, progress, top edge */
+      --color-primary: #A83232;
+      --color-primary-strong: #8C2629; /* hover and pressed */
+      --color-on-primary: #FFFFFF;
+
+      /* Gold: the answer a student picks, small highlights */
+      --color-accent: #F0B840;
+      --color-accent-soft: #FCF1D6;
+      --color-accent-strong: #B8861C; /* borders around picked answers */
 
       /* Status */
       --color-success: #1E7B4F;
@@ -41,7 +52,7 @@
       --radius-control: 12px;
       --radius-small: 8px;
       --border-width: 2px;
-      --shadow-lift: 0 12px 28px rgba(31, 43, 69, 0.28);
+      --shadow-lift: 0 12px 28px rgba(34, 26, 31, 0.24);
     }
 
 
@@ -58,7 +69,19 @@
       line-height: 1.45;
     }
 
-    main { max-width: 720px; margin: 0 auto; padding: 32px 16px 48px; }
+    main { max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; }
+
+    /* School branding */
+    .brand-edge { height: 6px; background: var(--color-primary); border-bottom: 2px solid var(--color-accent); }
+    .brand { display: flex; align-items: center; gap: 14px; margin: 0 4px 20px; }
+    .brand-logo { flex: none; width: 60px; height: auto; }
+    .brand-school {
+      margin: 0; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--color-primary);
+    }
+    .brand-name { margin: 2px 0 0; font-family: var(--font-heading); font-size: 1.35rem; font-weight: 700; line-height: 1.2; }
+    body[data-screen="screen-quiz"] .brand,
+    body[data-screen="screen-review"] .brand { display: none; }
 
     .screen { background: var(--color-surface); border-radius: var(--radius-card); padding: 32px 28px; }
 
@@ -98,7 +121,11 @@
       border: 2px solid var(--color-ink);
       cursor: pointer;
     }
-    .btn-primary { background: var(--color-ink); color: var(--color-on-ink); }
+    .btn-primary { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-on-primary); }
+    .btn-primary:not(:disabled):active { background: var(--color-primary-strong); border-color: var(--color-primary-strong); }
+    @media (hover: hover) {
+      .btn-primary:not(:disabled):hover { background: var(--color-primary-strong); border-color: var(--color-primary-strong); }
+    }
     .btn-secondary { background: var(--color-surface); color: var(--color-ink); border-color: var(--color-line); }
     .btn-block { width: 100%; margin-top: 20px; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -120,7 +147,7 @@
 
     .track { display: flex; gap: 4px; margin: 12px 0 32px; }
     .seg { flex: 1; height: 10px; border-radius: 5px; background: var(--color-sunken); }
-    .seg.done { background: var(--color-accent); }
+    .seg.done { background: var(--color-primary); }
     .seg.current { box-shadow: inset 0 0 0 2px var(--color-ink); }
 
     .question { font-size: clamp(1.35rem, 4.5vw, 1.7rem); font-weight: 700; line-height: 1.35; margin: 0 0 12px; }
@@ -136,7 +163,7 @@
       background: var(--color-surface); border: 2px solid var(--color-line); border-radius: var(--radius-control); cursor: pointer;
     }
     .choice:hover { border-color: var(--color-ink-soft); }
-    .choice[aria-checked="true"] { background: var(--color-accent-soft); border-color: var(--color-accent-strong); }
+    .choice[aria-checked="true"] { background: var(--color-accent-soft); border-color: var(--color-ink); }
     .letter {
       flex: none; width: 40px; height: 40px; border-radius: 50%;
       display: grid; place-items: center; font-weight: 700; border: 2px solid var(--color-line);
@@ -304,6 +331,9 @@
     .preview-line { font-size: 1rem; margin: 0 0 2px; overflow-wrap: anywhere; }
 
     @media (max-width: 520px) {
+      .brand { gap: 12px; margin: 0; padding: 14px 18px; }
+      .brand-logo { width: 48px; }
+      .brand-name { font-size: 1.15rem; }
       body { font-size: 18px; }
       main { padding: 0; }
       .screen { border-radius: 0; min-height: 100vh; padding: 24px 18px; }
@@ -321,8 +351,16 @@
   <script src="config.js"></script>
 </head>
 <body>
+  <div class="brand-edge" aria-hidden="true"></div>
   <div id="preview-bar" class="preview-bar" hidden>Preview. Nothing you do here is saved.</div>
   <main>
+    <header class="brand">
+      <img class="brand-logo" src="logo.png" alt="" width="60" height="72" onerror="this.hidden = true">
+      <div>
+        <p id="brand-school" class="brand-school" hidden></p>
+        <p id="brand-name" class="brand-name" hidden></p>
+      </div>
+    </header>
 
     <section id="screen-loading" class="screen" aria-live="polite">
       <p>Loading quiz…</p>
@@ -435,7 +473,7 @@
   <script>
     /* ---------- Setup ---------- */
 
-    const APP_VERSION = "3.0";
+    const APP_VERSION = "3.1";
     const API_URL = String(window.QUIZ_SERVER || "").trim();
     const PARAMS = new URLSearchParams(location.search);
     const LINK_QUIZ = (PARAMS.get("quiz") || "").trim();
@@ -443,6 +481,7 @@
 
     const state = {
       mode: "hub",        // "hub" (home page), "link" (direct quiz link), or "preview"
+      timeZone: "America/Chicago",  // replaced by the server's time zone on the first response
       quizId: LINK_QUIZ,
       code: "",
       title: "",
@@ -500,6 +539,7 @@
           lastError = new Error("The quiz is busy. Wait a moment and try again.");
           continue;
         }
+        if (payload.timeZone) state.timeZone = payload.timeZone;
         if (payload.version && payload.version !== APP_VERSION) {
           console.warn("Quiz site is version " + APP_VERSION + " but the server is " + payload.version + ".");
         }
@@ -511,6 +551,7 @@
 
     function show(screenId) {
       document.querySelectorAll(".screen").forEach((s) => { s.hidden = s.id !== screenId; });
+      document.body.dataset.screen = screenId;
       window.scrollTo(0, 0);
     }
 
@@ -522,13 +563,67 @@
       show("screen-message");
     }
 
-    function formatWhen(iso) {
+    /* ---------- Time zone ---------- */
+    // The server sends its time zone. Times are read and shown in that zone,
+    // not in whatever zone this computer happens to be set to.
+
+    /** Wall-clock parts of a moment in the quiz time zone. */
+    function zoneParts(ms, timeZone) {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: timeZone, hourCycle: "h23",
+        year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit"
+      }).formatToParts(new Date(ms));
+      const get = (type) => Number((parts.find((p) => p.type === type) || {}).value);
+      return { year: get("year"), month: get("month"), day: get("day"), hour: get("hour") % 24, minute: get("minute"), second: get("second") };
+    }
+
+    /** How far the time zone is ahead of UTC at a moment, in milliseconds. */
+    function zoneOffset(ms, timeZone) {
+      const p = zoneParts(ms, timeZone);
+      return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - Math.floor(ms / 1000) * 1000;
+    }
+
+    /** Formats a moment like "Fri, Sep 18, 3:00 PM CDT". */
+    function formatInZone(iso, timeZone) {
       const d = new Date(iso);
       if (isNaN(d)) return "";
-      return d.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+      return d.toLocaleString("en-US", {
+        timeZone: timeZone, weekday: "short", month: "short", day: "numeric",
+        hour: "numeric", minute: "2-digit", timeZoneName: "short"
+      });
+    }
+
+    function formatWhen(iso) {
+      return formatInZone(iso, state.timeZone);
     }
 
     const plural = (n, word) => n + " " + word + (n === 1 ? "" : "s");
+
+    /* ---------- Branding ---------- */
+    // Names come from theme.css, so all branding lives in one file.
+
+    function brandText(name) {
+      const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return raw.replace(/^(["'])(.*)\1$/, "$2").replace(/\\(["'\\])/g, "$1");
+    }
+
+    const BRAND = {
+      name: brandText("--brand-name"),
+      school: brandText("--brand-school"),
+      welcome: brandText("--brand-welcome")
+    };
+
+    function applyBrand() {
+      $("brand-name").textContent = BRAND.name;
+      $("brand-name").hidden = !BRAND.name;
+      $("brand-school").textContent = BRAND.school;
+      $("brand-school").hidden = !BRAND.school;
+      document.title = BRAND.name || "Quizzes";
+    }
+
+    function setTitle(title) {
+      document.title = title + (BRAND.name ? " | " + BRAND.name : "");
+    }
 
     function setError(id, message) {
       $(id).textContent = message || "";
@@ -548,6 +643,7 @@
     /* ---------- Load ---------- */
 
     async function init() {
+      applyBrand();
       if (!/^https:\/\/script\.google\.com\/.+\/exec$/.test(API_URL)) {
         showMessage("This quiz isn't connected yet", "Teacher: paste your Apps Script web app URL into config.js. It ends in /exec.");
         return;
@@ -560,8 +656,7 @@
 
       if (!LINK_QUIZ) {
         state.mode = "hub";
-        document.title = "Your quizzes";
-        $("start-title").textContent = "Your quizzes";
+        $("start-title").textContent = BRAND.welcome || "Your quizzes";
         $("start-instructions").textContent = "Enter your student code to see the quizzes you can take.";
         $("start-instructions").hidden = false;
         $("start-meta").hidden = true;
@@ -573,7 +668,7 @@
       try {
         const info = await api("info");
         state.title = info.title;
-        document.title = info.title;
+        setTitle(info.title);
         if (!info.open) {
           if (info.opensAt) showMessage("This quiz isn't open yet", "It opens " + formatWhen(info.opensAt) + ".");
           else showMessage("This quiz is closed", "Ask your teacher when it opens.");
@@ -644,7 +739,7 @@
 
     function loadQuestions(result) {
       state.title = result.title;
-      document.title = result.title;
+      setTitle(result.title);
       state.questions = result.questions;
       state.answers = {};
       state.index = 0;
@@ -684,7 +779,7 @@
       try {
         const result = await api("preview", { preview: PREVIEW_KEY });
         loadQuestions(result);
-        document.title = "Preview: " + result.title;
+        setTitle("Preview: " + result.title);
         $("intro-title").textContent = result.title;
         $("intro-instructions").textContent = result.instructions || "";
         $("intro-instructions").hidden = !result.instructions;
