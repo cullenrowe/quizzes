@@ -495,6 +495,9 @@
       mode: "hub",        // "hub" (home page), "link" (direct quiz link), or "preview"
       timeZone: "America/Chicago",  // replaced by the server's time zone on the first response
       quizId: LINK_QUIZ,
+      activeQuizId: "",   // the quiz whose questions are loaded; submit always uses this
+      hubRequest: 0,      // newest home page load, so late responses can be ignored
+      checkingCode: false,
       code: "",
       title: "",
       questions: [],
@@ -699,7 +702,10 @@
     /* ---------- Student home ---------- */
 
     async function openHub(button) {
+      const request = ++state.hubRequest;
       const result = await api("hub", { code: state.code });
+      // A slow, older load must not clear a quiz the student already opened.
+      if (request !== state.hubRequest) return;
       state.quizId = "";
       $("hub-name").textContent = result.name;
       $("hub-class").textContent = result.className || "";
@@ -727,16 +733,18 @@
     }
 
     async function startFromHub(q, button) {
+      if (button.disabled) return;
       setError("hub-error", "");
       setBusy(button, true, "Opening…");
+      state.hubRequest++;
       state.quizId = q.id;
       try {
-        const result = await api("start", { code: state.code });
+        const result = await api("start", { code: state.code, quiz: q.id });
         if (result.status === "already-submitted") {
           await openHub();
           return;
         }
-        loadQuestions(result);
+        loadQuestions(result, q.id);
         $("intro-title").textContent = result.title;
         $("intro-instructions").textContent = result.instructions || "";
         $("intro-instructions").hidden = !result.instructions;
@@ -751,7 +759,8 @@
       }
     }
 
-    function loadQuestions(result) {
+    function loadQuestions(result, quizId) {
+      state.activeQuizId = quizId;
       state.title = result.title;
       setTitle(result.title);
       state.questions = result.questions;
@@ -792,7 +801,7 @@
       $("preview-bar").hidden = false;
       try {
         const result = await api("preview", { preview: PREVIEW_KEY });
-        loadQuestions(result);
+        loadQuestions(result, LINK_QUIZ);
         setTitle("Preview: " + result.title);
         $("intro-title").textContent = result.title;
         $("intro-instructions").textContent = result.instructions || "";
@@ -836,6 +845,8 @@
         $("code-input").focus();
         return;
       }
+      if (state.checkingCode) return;
+      state.checkingCode = true;
       setError("start-error", "");
       const button = $("code-button");
       setBusy(button, true, "Checking…");
@@ -848,6 +859,7 @@
           state.code = "";
           setError("start-error", err.message);
         } finally {
+          state.checkingCode = false;
           setBusy(button, false);
         }
         return;
@@ -860,6 +872,7 @@
           return;
         }
         state.code = code;
+        state.activeQuizId = LINK_QUIZ;
         state.questions = result.questions;
         state.answers = {};
         state.index = 0;
@@ -871,6 +884,7 @@
       } catch (err) {
         setError("start-error", err.message);
       } finally {
+        state.checkingCode = false;
         setBusy(button, false);
       }
     }
@@ -1403,14 +1417,14 @@
 
       try {
         if (state.mode === "preview") {
-          const result = await api("previewSubmit", { preview: PREVIEW_KEY, answers: answers });
+          const result = await api("previewSubmit", { preview: PREVIEW_KEY, answers: answers, quiz: state.activeQuizId });
           state.inProgress = false;
           setBusy(submitBtn, false);
           backBtn.disabled = false;
           showPreviewResults(result);
           return;
         }
-        await api("submit", { code: state.code, answers: answers });
+        await api("submit", { code: state.code, answers: answers, quiz: state.activeQuizId });
         state.inProgress = false;
         if (state.mode === "hub") {
           showMessage("Quiz submitted", "Your answers were sent to your teacher.", true, true);
